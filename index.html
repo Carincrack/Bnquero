@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación del Algoritmo del Banquero</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        label {
+            font-weight: bold;
+            color: #34495e;
+        }
+        
+        input, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .simulation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .bank {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .bank-title {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .bank-resources {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .resource {
+            width: 30px;
+            height: 30px;
+            background-color: gold;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .clients {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .client {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+            width: calc(33.33% - 10px);
+            min-width: 200px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .client-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .client-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .client-resources {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .log-area {
+            margin-top: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .client.processing {
+            animation: pulse 1s infinite alternate;
+        }
+        
+        .client.safe {
+            border-left: 5px solid #2ecc71;
+        }
+        
+        .client.unsafe {
+            border-left: 5px solid #e74c3c;
+        }
+        
+        .resource.moving {
+            position: absolute;
+            animation: moveResource 1s forwards;
+        }
+        
+        @keyframes pulse {
+            0% {
+                background-color: #e8f4fc;
+            }
+            100% {
+                background-color: #bde0fd;
+            }
+        }
+        
+        @keyframes moveResource {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-30px);
+            }
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-safe {
+            background-color: #2ecc71;
+        }
+        
+        .status-unsafe {
+            background-color: #e74c3c;
+        }
+        
+        .status-processing {
+            background-color: #f39c12;
+        }
+        
+        .resource-transfer {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: gold;
+            border-radius: 50%;
+            z-index: 100;
+            transition: all 1s ease-in-out;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .explanation {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .explanation h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .explanation p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .client {
+                width: 100%;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simulación del Algoritmo del Banquero</h1>
+        
+        <div class="controls">
+            <div class="input-group">
+                <label for="total-resources">Recursos Totales:</label>
+                <input type="number" id="total-resources" min="1" value="10">
+            </div>
+            
+            <div class="input-group">
+                <label for="num-clients">Número de Clientes:</label>
+                <input type="number" id="num-clients" min="1" max="10" value="5">
+            </div>
+            
+            <button id="init-simulation">Iniciar Simulación</button>
+            <button id="step-simulation" disabled>Siguiente Paso</button>
+            <button id="auto-simulation" disabled>Simulación Automática</button>
+            <button id="reset-simulation">Reiniciar</button>
+        </div>
+        
+        <div class="simulation-area">
+            <div class="bank">
+                <div class="bank-title">Recursos Disponibles en el Banco:</div>
+                <div class="bank-resources" id="bank-resources">
+                    <!-- Resource icons will be generated here -->
+                </div>
+            </div>
+            
+            <div class="clients" id="clients-container">
+                <!-- Client boxes will be generated here -->
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="status-indicator status-safe"></div>
+                    <span>Estado Seguro</span>
+                </div>
+                <div class="legend-item">
+                    <div class="status-indicator status-unsafe"></div>
+                    <span>Estado Inseguro</span>
+                </div>
+                <div class="legend-item">
+                    <div class="status-indicator status-processing"></div>
+                    <span>Procesando</span>
+                </div>
+            </div>
+            
+            <div class="log-area" id="log-area">
+                <div class="log-entry">Inicialice la simulación configurando los recursos y clientes.</div>
+            </div>
+            
+            <div class="explanation">
+                <h3>El Algoritmo del Banquero - Explicación</h3>
+                <p>El Algoritmo del Banquero es un algoritmo de prevención de interbloqueos que se utiliza en sistemas operativos para gestionar recursos y prevenir deadlocks.</p>
+                <p><strong>Funcionamiento:</strong></p>
+                <p>1. El banco (sistema) tiene un número finito de recursos.</p>
+                <p>2. Cada cliente declara el máximo número de recursos que necesitará.</p>
+                <p>3. Cuando un cliente solicita recursos, el algoritmo verifica si al concederlos:</p>
+                <p>&nbsp;&nbsp;a) Quedan suficientes recursos para que al menos un cliente pueda completar su ejecución.</p>
+                <p>&nbsp;&nbsp;b) Si existe al menos una secuencia segura de asignación donde todos los clientes pueden terminar.</p>
+                <p>4. Si conceder los recursos lleva a un estado seguro, se aprueban; de lo contrario, se pospone la solicitud.</p>
+                <p>5. Cuando un cliente termina, devuelve todos sus recursos al banco.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // State variables
+            let bankResources = 0;
+            let totalResources = 0;
+            let clients = [];
+            let isSimulationRunning = false;
+            let currentStep = 0;
+            let safeSequence = [];
+            let autoSimulationInterval = null;
+            
+            // Initialize UI
+            function initUI() {
+                totalResources = parseInt($("#total-resources").val()) || 10;
+                bankResources = totalResources;
+                const numClients = parseInt($("#num-clients").val()) || 5;
+                
+                // Generate clients
+                clients = [];
+                for (let i = 0; i < numClients; i++) {
+                    // Random client data - max claim is between 1 and totalResources/2
+                    const maxClaim = Math.floor(Math.random() * (totalResources / 2)) + 1;
+                    // Allocated is between 0 and maxClaim
+                    const allocated = Math.floor(Math.random() * Math.min(maxClaim, bankResources / 2));
+                    
+                    clients.push({
+                        id: i + 1,
+                        maxClaim: maxClaim,
+                        allocated: allocated,
+                        remainingNeed: maxClaim - allocated,
+                        completed: false,
+                        status: "waiting" // waiting, processing, completed
+                    });
+                    
+                    // Update bank resources
+                    bankResources -= allocated;
+                }
+                
+                // Render initial state
+                renderState();
+                
+                // Enable buttons
+                $("#step-simulation").prop("disabled", false);
+                $("#auto-simulation").prop("disabled", false);
+                
+                // Log
+                log("Simulación inicializada con " + totalResources + " recursos y " + numClients + " clientes.");
+                
+                // Calculate and display safe sequence if possible
+                calculateSafeSequence();
+            }
+            
+            // Render the current state
+            function renderState() {
+                // Render bank resources
+                const bankResourcesContainer = $("#bank-resources");
+                bankResourcesContainer.empty();
+                bankResourcesContainer.append(`<span>${bankResources} unidades disponibles:</span>`);
+                
+                for (let i = 0; i < bankResources; i++) {
+                    bankResourcesContainer.append(`<div class="resource">$</div>`);
+                }
+                
+                // Render clients
+                const clientsContainer = $("#clients-container");
+                clientsContainer.empty();
+                
+                clients.forEach(client => {
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    if (client.status === "processing") {
+                        statusClass = 'processing';
+                        statusText = '<div class="status-indicator status-processing"></div> Procesando';
+                    } else if (client.status === "completed") {
+                        statusClass = 'safe';
+                        statusText = '<div class="status-indicator status-safe"></div> Completado';
+                    } else if (client.remainingNeed <= bankResources) {
+                        statusClass = 'safe';
+                        statusText = '<div class="status-indicator status-safe"></div> Seguro';
+                    } else {
+                        statusClass = 'unsafe';
+                        statusText = '<div class="status-indicator status-unsafe"></div> Inseguro';
+                    }
+                    
+                    const clientHTML = `
+                        <div class="client ${statusClass}" id="client-${client.id}" data-id="${client.id}">
+                            <div class="client-title">Cliente ${client.id} ${statusText}</div>
+                            <div class="client-info">
+                                <div class="client-resources">
+                                    <span>Máximo:</span>
+                                    ${renderResources(client.maxClaim)}
+                                </div>
+                                <div class="client-resources">
+                                    <span>Asignado:</span>
+                                    ${renderResources(client.allocated)}
+                                </div>
+                                <div class="client-resources">
+                                    <span>Necesita:</span>
+                                    ${renderResources(client.remainingNeed)}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    clientsContainer.append(clientHTML);
+                });
+            }
+            
+            // Helper function to render resource icons
+            function renderResources(count) {
+                let result = `<span>${count} unidades</span>`;
+                for (let i = 0; i < count; i++) {
+                    result += `<div class="resource">$</div>`;
+                }
+                return result;
+            }
+            
+            // Calculate safe sequence using Banker's Algorithm
+            function calculateSafeSequence() {
+                // Make a copy of the current state
+                const tempBankResources = bankResources;
+                const tempClients = JSON.parse(JSON.stringify(clients));
+                const unprocessedClients = tempClients.filter(client => !client.completed);
+                
+                safeSequence = [];
+                let work = tempBankResources;
+                let finish = Array(unprocessedClients.length).fill(false);
+                
+                // Loop until all clients are processed or no safe client is found
+                let found;
+                do {
+                    found = false;
+                    for (let i = 0; i < unprocessedClients.length; i++) {
+                        if (!finish[i] && unprocessedClients[i].remainingNeed <= work) {
+                            // Process this client
+                            work += unprocessedClients[i].allocated;
+                            finish[i] = true;
+                            safeSequence.push(unprocessedClients[i].id);
+                            found = true;
+                        }
+                    }
+                } while (found);
+                
+                // Check if all clients can be completed
+                const allCompleted = finish.every(f => f);
+                
+                if (allCompleted) {
+                    log("Estado seguro detectado. Secuencia segura: " + safeSequence.join(" → "));
+                } else {
+                    log("¡Estado inseguro! No se puede garantizar una secuencia segura para todos los clientes.");
+                    safeSequence = [];
+                }
+                
+                return allCompleted;
+            }
+            
+            // Simulate a step of the algorithm
+            function simulateStep() {
+                if (safeSequence.length === 0) {
+                    log("No hay secuencia segura para continuar. Intente reiniciar con diferentes parámetros.");
+                    return false;
+                }
+                
+                if (currentStep >= safeSequence.length) {
+                    log("¡Simulación completada! Todos los clientes han sido atendidos.");
+                    stopAutoSimulation();
+                    return false;
+                }
+                
+                const clientId = safeSequence[currentStep];
+                const client = clients.find(c => c.id === clientId);
+                
+                // Mark client as processing
+                client.status = "processing";
+                renderState();
+                log(`Cliente ${clientId} está siendo procesado...`);
+                
+                // Simulate the client taking all needed resources
+                setTimeout(() => {
+                    // Animate resource transfer from bank to client
+                    animateResourceTransfer("bank-resources", `client-${clientId}`, client.remainingNeed);
+                    
+                    // Update client and bank state
+                    bankResources -= client.remainingNeed;
+                    client.allocated += client.remainingNeed;
+                    client.remainingNeed = 0;
+                    
+                    log(`Cliente ${clientId} recibió ${client.remainingNeed} recursos adicionales.`);
+                    
+                    // Simulate the client completing its work
+                    setTimeout(() => {
+                        // Release all resources back to bank
+                        animateResourceTransfer(`client-${clientId}`, "bank-resources", client.allocated);
+                        
+                        log(`Cliente ${clientId} completó su trabajo y liberó ${client.allocated} recursos.`);
+                        
+                        bankResources += client.allocated;
+                        client.allocated = 0;
+                        client.completed = true;
+                        client.status = "completed";
+                        
+                        // Move to next step
+                        currentStep++;
+                        renderState();
+                        
+                        // Continue auto simulation if enabled
+                        if (autoSimulationInterval !== null) {
+                            if (currentStep >= safeSequence.length) {
+                                stopAutoSimulation();
+                                log("¡Simulación automática completada!");
+                            }
+                        }
+                    }, 1500);
+                }, 1000);
+                
+                return true;
+            }
+            
+            // Animate resource transfer between elements
+            function animateResourceTransfer(fromId, toId, count) {
+                const fromElement = document.getElementById(fromId);
+                const toElement = document.getElementById(toId);
+                
+                if (!fromElement || !toElement || count <= 0) return;
+                
+                const fromRect = fromElement.getBoundingClientRect();
+                const toRect = toElement.getBoundingClientRect();
+                
+                // Create resource tokens
+                for (let i = 0; i < Math.min(count, 5); i++) {
+                    const resourceToken = document.createElement('div');
+                    resourceToken.className = 'resource-transfer';
+                    document.body.appendChild(resourceToken);
+                    
+                    // Set initial position
+                    resourceToken.style.left = `${fromRect.left + 50 + Math.random() * 50}px`;
+                    resourceToken.style.top = `${fromRect.top + 20 + Math.random() * 20}px`;
+                    
+                    // Animate to target position
+                    setTimeout(() => {
+                        resourceToken.style.left = `${toRect.left + 50 + Math.random() * 50}px`;
+                        resourceToken.style.top = `${toRect.top + 20 + Math.random() * 20}px`;
+                        
+                        // Remove element after animation completes
+                        setTimeout(() => {
+                            resourceToken.remove();
+                        }, 1000);
+                    }, 10);
+                }
+            }
+            
+            // Start auto simulation
+            function startAutoSimulation() {
+                if (autoSimulationInterval !== null) return;
+                
+                autoSimulationInterval = setInterval(() => {
+                    if (!simulateStep()) {
+                        stopAutoSimulation();
+                    }
+                }, 4000);
+                
+                log("Simulación automática iniciada.");
+                $("#auto-simulation").text("Detener Auto");
+            }
+            
+            // Stop auto simulation
+            function stopAutoSimulation() {
+                if (autoSimulationInterval !== null) {
+                    clearInterval(autoSimulationInterval);
+                    autoSimulationInterval = null;
+                    $("#auto-simulation").text("Simulación Automática");
+                    log("Simulación automática detenida.");
+                }
+            }
+            
+            // Reset simulation
+            function resetSimulation() {
+                stopAutoSimulation();
+                currentStep = 0;
+                safeSequence = [];
+                $("#log-area").empty();
+                log("Simulación reiniciada. Configure los parámetros y presione 'Iniciar Simulación'.");
+                
+                // Disable buttons
+                $("#step-simulation").prop("disabled", true);
+                $("#auto-simulation").prop("disabled", true);
+            }
+            
+            // Add log entry
+            function log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                $("#log-area").append(`<div class="log-entry">[${timestamp}] ${message}</div>`);
+                
+                // Scroll to bottom
+                const logArea = document.getElementById("log-area");
+                logArea.scrollTop = logArea.scrollHeight;
+            }
+            
+            // Event handlers
+            $("#init-simulation").click(function() {
+                resetSimulation();
+                initUI();
+            });
+            
+            $("#step-simulation").click(function() {
+                simulateStep();
+            });
+            
+            $("#auto-simulation").click(function() {
+                if (autoSimulationInterval === null) {
+                    startAutoSimulation();
+                } else {
+                    stopAutoSimulation();
+                }
+            });
+            
+            $("#reset-simulation").click(function() {
+                resetSimulation();
+            });
+            
+            // Initialize on load
+            resetSimulation();
+        });
+    </script>
+</body>
+</html>
